@@ -63,10 +63,11 @@ export default {
     showWhatsAppReconfigure() {
       return (
         this.isEmbeddedSignupWhatsApp &&
-        this.isFeatureEnabledonAccount(
-          this.accountId,
-          FEATURE_FLAGS.WHATSAPP_RECONFIGURE
-        )
+        (this.inbox.reauthorization_required ||
+          this.isFeatureEnabledonAccount(
+            this.accountId,
+            FEATURE_FLAGS.WHATSAPP_RECONFIGURE
+          ))
       );
     },
     isForwardingEnabled() {

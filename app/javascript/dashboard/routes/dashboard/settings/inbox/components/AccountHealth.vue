@@ -10,15 +10,41 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+  healthError: {
+    type: Object,
+    default: null,
+  },
+  isEmbeddedSignup: {
+    type: Boolean,
+    default: false,
+  },
   isRegisteringWebhook: {
     type: Boolean,
     default: false,
   },
 });
 
-const emit = defineEmits(['registerWebhook']);
+const emit = defineEmits(['registerWebhook', 'openConfiguration']);
 
 const { t } = useI18n();
+
+const authorizationError = computed(
+  () => props.healthError?.error_code === 'authorization_required'
+);
+
+const recoveryDescription = computed(() =>
+  props.isEmbeddedSignup
+    ? t(
+        'INBOX_MGMT.ACCOUNT_HEALTH.AUTHORIZATION_ERROR.EMBEDDED_SIGNUP_DESCRIPTION'
+      )
+    : t('INBOX_MGMT.ACCOUNT_HEALTH.AUTHORIZATION_ERROR.MANUAL_DESCRIPTION')
+);
+
+const recoveryAction = computed(() =>
+  props.isEmbeddedSignup
+    ? t('INBOX_MGMT.ACCOUNT_HEALTH.AUTHORIZATION_ERROR.RECONFIGURE')
+    : t('INBOX_MGMT.ACCOUNT_HEALTH.AUTHORIZATION_ERROR.UPDATE_TOKEN')
+);
 
 const QUALITY_COLORS = {
   GREEN: 'text-n-teal-11',
@@ -289,6 +315,28 @@ const handleRegisterWebhook = () => {
               {{ t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.REGISTER_BUTTON') }}
             </ButtonV4>
           </div>
+        </div>
+      </div>
+
+      <div v-else-if="authorizationError" class="pt-8">
+        <div
+          class="flex flex-col justify-center items-center gap-3 p-8 text-center"
+        >
+          <Icon
+            icon="i-lucide-triangle-alert"
+            class="w-8 h-8 text-n-amber-10"
+          />
+          <div class="max-w-xl">
+            <p class="text-heading-3 text-n-slate-12">
+              {{ t('INBOX_MGMT.ACCOUNT_HEALTH.AUTHORIZATION_ERROR.TITLE') }}
+            </p>
+            <p class="mt-1 text-body-main text-n-slate-11">
+              {{ recoveryDescription }}
+            </p>
+          </div>
+          <ButtonV4 sm solid blue @click="emit('openConfiguration')">
+            {{ recoveryAction }}
+          </ButtonV4>
         </div>
       </div>
 

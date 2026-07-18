@@ -1,5 +1,6 @@
 class Whatsapp::HealthService
   BASE_URI = 'https://graph.facebook.com'.freeze
+  META_AUTHORIZATION_ERROR_CODE = 190
 
   def initialize(channel)
     @channel = channel
@@ -59,11 +60,21 @@ class Whatsapp::HealthService
     unless response.success?
       error_message = "WhatsApp API request failed: #{response.code} - #{response.body}"
       Rails.logger.error "[WHATSAPP HEALTH] #{error_message}"
+      if meta_authorization_error?(response)
+        @channel.authorization_error!
+        raise CustomExceptions::Whatsapp::AuthorizationError, error_message
+      end
+
       raise error_message
     end
 
     data = response.parsed_response
     format_health_response(data)
+  end
+
+  def meta_authorization_error?(response)
+    parsed_response = response.parsed_response
+    parsed_response.is_a?(Hash) && parsed_response.dig('error', 'code').to_i == META_AUTHORIZATION_ERROR_CODE
   end
 
   def format_health_response(response)

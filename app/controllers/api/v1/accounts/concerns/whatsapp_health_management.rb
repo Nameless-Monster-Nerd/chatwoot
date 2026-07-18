@@ -19,6 +19,9 @@ module Api::V1::Accounts::Concerns::WhatsappHealthManagement
   def health
     health_data = Whatsapp::HealthService.new(@inbox.channel).fetch_health_status
     render json: health_data
+  rescue CustomExceptions::Whatsapp::AuthorizationError => e
+    Rails.logger.error "[INBOX HEALTH] WhatsApp authorization failed: #{e.message}"
+    render json: { error: e.message, error_code: 'authorization_required' }, status: :unprocessable_entity
   rescue StandardError => e
     Rails.logger.error "[INBOX HEALTH] Error fetching health data: #{e.message}"
     render json: { error: e.message }, status: :unprocessable_entity

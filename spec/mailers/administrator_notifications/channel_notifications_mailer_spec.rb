@@ -38,7 +38,7 @@ RSpec.describe AdministratorNotifications::ChannelNotificationsMailer do
     let(:mail) { described_class.with(account: account).whatsapp_disconnect(whatsapp_inbox).deliver_now }
 
     it 'renders the subject' do
-      expect(mail.subject).to eq('Your Whatsapp connection has expired')
+      expect(mail.subject).to eq('Your WhatsApp connection needs to be refreshed')
     end
 
     it 'renders the receiver email' do

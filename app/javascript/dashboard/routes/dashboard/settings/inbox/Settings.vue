@@ -393,6 +393,9 @@ export default {
         this.inbox.reauthorization_required
       );
     },
+    whatsappAuthorizationError() {
+      return this.healthError?.error_code === 'authorization_required';
+    },
     whatsappRegistrationIncomplete() {
       if (
         !this.healthData ||
@@ -411,6 +414,8 @@ export default {
       return (
         this.isAWhatsAppCloudChannel &&
         this.isEmbeddedSignupWhatsApp &&
+        !this.whatsappUnauthorized &&
+        !this.whatsappAuthorizationError &&
         this.isFeatureEnabledonAccount(
           this.accountId,
           FEATURE_FLAGS.WHATSAPP_MANUAL_TRANSFER
@@ -580,7 +585,10 @@ export default {
         const response = await InboxHealthAPI.getHealthStatus(this.inbox.id);
         this.healthData = response.data;
       } catch (error) {
-        this.healthError = error.message || 'Failed to fetch health data';
+        this.healthData = null;
+        this.healthError = error.response?.data || {
+          error: error.message || 'Failed to fetch health data',
+        };
       } finally {
         this.isLoadingHealth = false;
       }
@@ -600,6 +608,14 @@ export default {
         );
       } finally {
         this.isRegisteringWebhook = false;
+      }
+    },
+    openConfiguration() {
+      const configurationTabIndex = this.tabs.findIndex(
+        tab => tab.key === 'configuration'
+      );
+      if (configurationTabIndex !== -1) {
+        this.onTabChange(configurationTabIndex);
       }
     },
     handleFeatureFlag(e) {
@@ -1402,7 +1418,10 @@ export default {
         <div v-if="selectedTabKey === 'whatsapp-health'">
           <AccountHealth
             :health-data="healthData"
+            :health-error="healthError"
+            :is-embedded-signup="isEmbeddedSignupWhatsApp"
             :is-registering-webhook="isRegisteringWebhook"
+            @open-configuration="openConfiguration"
             @register-webhook="registerWebhook"
           />
         </div>
