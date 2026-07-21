@@ -261,6 +261,28 @@ describe Whatsapp::Providers::WhatsappCloudService do
         timstamp = whatsapp_channel.reload.message_templates_last_updated
         subject.sync_templates
         expect(whatsapp_channel.reload.message_templates_last_updated).not_to eq(timstamp)
+        expect(whatsapp_channel.authorization_error_count).to eq(0)
+      end
+
+      it 'records an authorization error when Meta returns OAuth error 190' do
+        stub_request(:get, 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key')
+          .to_return(
+            status: 400,
+            headers: response_headers,
+            body: {
+              error: {
+                message: 'Error validating access token',
+                type: 'OAuthException',
+                code: 190,
+                error_subcode: 464,
+                fbtrace_id: 'synthetic_trace_id'
+              }
+            }.to_json
+          )
+
+        subject.sync_templates
+
+        expect(whatsapp_channel.authorization_error_count).to eq(1)
       end
     end
   end

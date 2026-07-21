@@ -1406,6 +1406,21 @@ RSpec.describe 'Inboxes API', type: :request do
           json_response = response.parsed_body
           expect(json_response['error']).to include('API Error')
         end
+
+        it 'returns a stable error code for authorization failures' do
+          allow(health_service).to receive(:fetch_health_status)
+            .and_raise(CustomExceptions::Whatsapp::AuthorizationError, 'Synthetic authorization error')
+
+          get "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/health",
+              headers: admin.create_new_auth_token,
+              as: :json
+
+          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response.parsed_body).to include(
+            'error' => 'Synthetic authorization error',
+            'error_code' => 'authorization_required'
+          )
+        end
       end
 
       context 'with non-WhatsApp inbox' do
